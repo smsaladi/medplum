@@ -1,7 +1,9 @@
 import { Group, NativeSelect, TextInput } from '@mantine/core';
 import { Address } from '@medplum/fhirtypes';
-import { useRef, useState } from 'react';
+import { useContext, useMemo, useRef, useState } from 'react';
 import { ComplexTypeInputProps } from '../ResourcePropertyInput/ResourcePropertyInput.utils';
+import { ElementsContext } from '../ElementsInput/ElementsInput.utils';
+import { CodeInput } from '../CodeInput/CodeInput';
 
 function getLine(address: Address, index: number): string {
   return address.line && address.line.length > index ? address.line[index] : '';
@@ -27,6 +29,12 @@ export function AddressInput(props: AddressInputProps): JSX.Element {
   // TODO{profiles} is it worth the complexity of subbing in an autocomplete input when
   // a binding is defined in a profile? If so, it should go in a new wrapper around TextInput
   // e.g. US Core Patient Profile
+  const { elementsByPath } = useContext(ElementsContext);
+
+  const [stateElement] = useMemo(
+    () => ['state'].map((field) => elementsByPath[props.path + '.' + field]),
+    [elementsByPath, props.path]
+  );
 
   function setValueWrapper(newValue: Address): void {
     setValue(newValue);
@@ -88,7 +96,18 @@ export function AddressInput(props: AddressInputProps): JSX.Element {
         onChange={(e) => setLine2(e.currentTarget.value)}
       />
       <TextInput placeholder="City" defaultValue={value.city} onChange={(e) => setCity(e.currentTarget.value)} />
-      <TextInput placeholder="State" defaultValue={value.state} onChange={(e) => setState(e.currentTarget.value)} />
+      {stateElement?.binding ? (
+        <CodeInput
+          placeholder="State"
+          maxValues={1}
+          withHelpText={false}
+          defaultValue={value.state}
+          onChange={(newState) => setState(newState ?? '')}
+          binding={stateElement.binding.valueSet}
+        />
+      ) : (
+        <TextInput placeholder="State" defaultValue={value.state} onChange={(e) => setState(e.currentTarget.value)} />
+      )}
       <TextInput
         placeholder="Postal Code"
         defaultValue={value.postalCode}
