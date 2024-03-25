@@ -81,6 +81,7 @@ import {
   resolveId,
   sleep,
 } from './utils';
+import { AuthState } from './auth';
 
 export const MEDPLUM_VERSION = import.meta.env.MEDPLUM_VERSION ?? '';
 export const DEFAULT_ACCEPT = ContentType.FHIR_JSON + ', */*; q=0.1';
@@ -765,13 +766,15 @@ export class MedplumClient extends EventTarget {
   private accessToken?: string;
   private accessTokenExpires?: number;
   private refreshToken?: string;
-  private refreshPromise?: Promise<any>;
-  private profilePromise?: Promise<any>;
+  // private refreshPromise?: Promise<any>;
+  // private profilePromise?: Promise<any>;
   private sessionDetails?: SessionDetails;
   private basicAuth?: string;
-  private initPromise: Promise<void>;
-  private initComplete = true;
+  // private initPromise: Promise<void>;
+  // private initComplete = true;
   private keyValueClient?: MedplumKeyValueClient;
+  private authState: AuthState = AuthState.Unauthenticated;
+  private authPromise?: Promise<void>;
 
   constructor(options?: MedplumClientOptions) {
     super();
