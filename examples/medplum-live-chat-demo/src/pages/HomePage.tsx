@@ -2,7 +2,18 @@ import { ActionIcon, Button, Stack, TextInput, Title } from '@mantine/core';
 import { createReference, getReferenceString } from '@medplum/core';
 import { Communication, Patient, Practitioner } from '@medplum/fhirtypes';
 import { HomerSimpson } from '@medplum/mock';
-import { Document, Form, Loading, ResourceName, ThreadChat, useMedplum, useMedplumProfile } from '@medplum/react';
+import {
+  ChatInput,
+  ChatModal,
+  Document,
+  Form,
+  Loading,
+  ResourceName,
+  ThreadChat,
+  useMedplum,
+  useMedplumProfile,
+  useThreadChatSendMessage,
+} from '@medplum/react';
 import { IconArrowRight } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -21,6 +32,8 @@ export function HomePage(): JSX.Element {
   const [thread, setThread] = useState<Communication>();
   const [homerSimpson, setHomerSimpson] = useState<Patient>();
   const searchingThreadRef = useRef(false);
+
+  const sendMessage = useThreadChatSendMessage(thread);
 
   useEffect(() => {
     medplum
@@ -125,7 +138,11 @@ export function HomePage(): JSX.Element {
         </Form>
         <Button onClick={() => markLastMessageAsDelivered().catch(console.error)}>Mark Last Message Delivered</Button>
       </Stack>
-      {thread && <ThreadChat title={'Chat with Homer Simpson'} thread={thread} />}
+      {thread && (
+        <ChatModal title="Chat with Homer Simpson" input={<ChatInput sendMessage={sendMessage} />}>
+          <ThreadChat thread={thread} />
+        </ChatModal>
+      )}
     </Document>
   );
 }

@@ -1,56 +1,24 @@
-import { ProfileResource, createReference, getReferenceString } from '@medplum/core';
 import { Communication } from '@medplum/fhirtypes';
 import { useMedplum, useMedplumProfile, usePrevious } from '@medplum/react-hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BaseChat } from '../BaseChat/BaseChat';
 
 export interface ThreadChatProps {
-  readonly title: string;
   readonly thread: Communication;
-  readonly open?: boolean;
-  readonly onMessageSent?: (message: Communication) => void;
 }
 
 export function ThreadChat(props: ThreadChatProps): JSX.Element | null {
-  const { title, thread, open, onMessageSent } = props;
+  const { thread } = props;
   const medplum = useMedplum();
   const profile = useMedplumProfile();
   const prevThreadId = usePrevious<string | undefined>(thread?.id);
   const [communications, setCommunications] = useState<Communication[]>([]);
-
-  const profileRef = useMemo(() => (profile ? createReference(profile as ProfileResource) : undefined), [profile]);
-  const threadRef = useMemo(() => createReference(thread), [thread]);
 
   useEffect(() => {
     if (thread?.id !== prevThreadId) {
       setCommunications([]);
     }
   }, [thread?.id, prevThreadId]);
-
-  const sendMessage = useCallback(
-    (message: string) => {
-      const profileRefStr = profileRef ? getReferenceString(profileRef) : undefined;
-      if (!profileRefStr) {
-        return;
-      }
-      medplum
-        .createResource<Communication>({
-          resourceType: 'Communication',
-          status: 'in-progress',
-          sender: profileRef,
-          recipient: thread.recipient?.filter((ref) => getReferenceString(ref) !== profileRefStr) ?? [],
-          sent: new Date().toISOString(),
-          payload: [{ contentString: message }],
-          partOf: [threadRef],
-        })
-        .then((communication) => {
-          setCommunications([...communications, communication]);
-          onMessageSent?.(communication);
-        })
-        .catch(console.error);
-    },
-    [medplum, profileRef, thread, threadRef, communications, onMessageSent]
-  );
 
   // Currently we only support `delivered` on chats with 2 participants
   // Normally we would use `useCallback` to memoize a function
@@ -82,13 +50,10 @@ export function ThreadChat(props: ThreadChatProps): JSX.Element | null {
 
   return (
     <BaseChat
-      title={title}
       communications={communications}
       setCommunications={setCommunications}
       query={`part-of=Communication/${thread.id as string}`}
-      sendMessage={sendMessage}
       onMessageReceived={onMessageReceived}
-      open={open}
     />
   );
 }
