@@ -1,6 +1,6 @@
 import { ActionIcon, Paper, ScrollArea, Title } from '@mantine/core';
 import { IconChevronDown, IconMessage } from '@tabler/icons-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatModalContext } from './ChatModal.context';
 import classes from './ChatModal.module.css';
 
@@ -16,33 +16,48 @@ export function ChatModal(props: ChatModalProps): JSX.Element | null {
   const [opened, setOpened] = useState(open ?? false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const scrollToBottomRef = useRef<boolean>(true);
-  const [context] = useState({
-    onMessageSent: () => {
-      scrollToBottomRef.current = true;
-    },
-    onMessageReceived: () => {
-      scrollToBottomRef.current = true;
-    },
+  const [renderCount, setRenderCount] = useState(0);
+
+  const triggerScrollToBottom = useCallback(() => {
+    scrollToBottomRef.current = true;
+    // We use this as a way to trigger a re-render
+    setRenderCount((s) => s + 1);
+  }, []);
+
+  const [context, setContext] = useState({
+    onMessageSent: triggerScrollToBottom,
+    onMessageReceived: triggerScrollToBottom,
   });
+
+  useEffect(() => {
+    setContext({
+      onMessageSent: triggerScrollToBottom,
+      onMessageReceived: triggerScrollToBottom,
+    });
+  }, [triggerScrollToBottom]);
 
   useEffect(() => {
     setOpened((prevVal) => open ?? prevVal);
   }, [open]);
 
   useEffect(() => {
-    if (!scrollToBottomRef.current) {
-      scrollToBottomRef.current = true;
-    }
-  }, [opened]);
+    console.log({ renderCount });
+  }, [renderCount]);
 
   useEffect(() => {
     if (scrollToBottomRef.current) {
       console.log('SCROLLING TO BOTTOM');
+      console.log('scrollAreaRef', scrollAreaRef.current);
       if (scrollAreaRef.current?.scrollTo) {
+        console.log('scrollHeight', scrollAreaRef.current.scrollHeight);
         scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
         scrollToBottomRef.current = false;
       }
     }
+  });
+
+  useEffect(() => {
+    console.log('other scrollHeight', scrollAreaRef.current?.scrollHeight);
   });
 
   if (!opened) {
@@ -56,7 +71,7 @@ export function ChatModal(props: ChatModalProps): JSX.Element | null {
           variant="outline"
           onClick={() => {
             setOpened(true);
-            scrollToBottomRef.current = true;
+            triggerScrollToBottom();
           }}
           aria-label="Open chat"
         >
