@@ -14,16 +14,17 @@ export NODE_OPTIONS='--max-old-space-size=8192'
 
 for dir in `ls packages`; do
   if test -f "packages/$dir/package.json" && grep -q "\"test\":" "packages/$dir/package.json"; then
-    npx turbo run test --filter=./packages/$dir --force -- --coverage 
+    npx turbo run test --filter=./packages/$dir --force -- --coverage&
   fi
 done
 
 for dir in `ls examples`; do
   if test -f "examples/$dir/package.json" && grep -q "\"test\":" "examples/$dir/package.json"; then
-    npx turbo run test --filter=./packages/$dir --force
+    npx turbo run test --filter=./packages/$dir --force&
   fi
 done
 
+wait
 
 # Combine test coverage
 rm -rf coverage
