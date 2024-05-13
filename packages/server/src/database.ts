@@ -45,6 +45,9 @@ export async function initDatabase(serverConfig: MedplumServerConfig): Promise<v
     client.query(`SET statement_timeout TO ${config.queryTimeout ?? 60000}`).catch((err) => {
       globalLogger.warn('Failed to set query timeout', err);
     });
+    client.query('SET pg_trgm.similarity_threshold = .01').catch((err) => {
+      globalLogger.warn('Failed to set pg_trgm.similarity_threshold', err);
+    });
   });
 
   let client: PoolClient | undefined;

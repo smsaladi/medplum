@@ -51,6 +51,7 @@ export const Operator = {
   '<=': simpleBinaryOperator('<='),
   '>': simpleBinaryOperator('>'),
   '>=': simpleBinaryOperator('>='),
+  '%': simpleBinaryOperator('%'),
   IN: simpleBinaryOperator('IN'),
   ARRAY_CONTAINS: (sql: SqlBuilder, column: Column, parameter: any, paramType?: string) => {
     sql.append('(');
@@ -474,6 +475,10 @@ export class SelectQuery extends BaseQuery implements Expression {
 
   orderBy(column: Column | string, descending?: boolean): this {
     this.orderBys.push(new OrderBy(getColumn(column, this.tableName), descending));
+    return this;
+  }
+  orderByExpr(orderByExpr: string): this {
+    this.orderBys.push(new OrderBy(new Column(undefined, orderByExpr, true)));
     return this;
   }
 

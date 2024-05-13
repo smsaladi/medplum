@@ -8,6 +8,9 @@ import { validateCoding } from './codesystemvalidatecode';
 import { getOperationDefinition } from './definitions';
 import { buildOutputParameters, clamp, parseInputParameters } from './utils/parameters';
 import { abstractProperty, addPropertyFilter, findTerminologyResource, getParentProperty } from './utils/terminology';
+import { globalLogger } from '../../logger';
+
+const USE_TSVECTOR = false;
 
 const operation = getOperationDefinition('ValueSet', 'expand');
 
@@ -279,7 +282,18 @@ async function includeInExpansion(
     .limit((count ?? MAX_EXPANSION_SIZE) + 1)
     .offset(offset ?? 0);
   if (filter) {
-    query.where('display', '!=', null).where('display', 'TSVECTOR_ENGLISH', filterToTsvectorQuery(filter));
+    // query.where('display', '!=', null).where('display', 'TSVECTOR_ENGLISH', filterToTsvectorQuery(filter));
+    // select display, display <-> 'mean val' AS distance FROM "Coding" WHERE display % 'mean val' ORDER BY display NOT ILIKE 'mean val%', display <-> 'mean val' LIMIT 50;
+    if (USE_TSVECTOR) {
+      globalLogger.info('USING tsvector');
+      query.where('display', '!=', null).where('display', 'TSVECTOR_ENGLISH', filterToTsvectorQuery(filter));
+    } else {
+      globalLogger.info('USING pg_trgm');
+      query
+        .where('display', '%', filter)
+        .orderByExpr(`display NOT ILIKE '${filter}%'`)
+        .orderByExpr(`display <-> '${filter}'`);
+    }
   }
   if (include.filter?.length) {
     for (const condition of include.filter) {
