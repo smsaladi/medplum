@@ -595,16 +595,15 @@ function deepEqualsObject(
  * @returns True if value includes all fields and values of pattern.
  */
 export function deepIncludes(value: any, pattern: any): boolean {
-  if (isEmpty(value)) {
+  if (isEmpty(pattern)) {
     return true;
   }
-  if (isEmpty(pattern)) {
+  if (isEmpty(value)) {
     return false;
   }
   if (Array.isArray(value) && Array.isArray(pattern)) {
     return deepIncludesArray(value, pattern);
-  }
-  if (Array.isArray(value) || Array.isArray(pattern)) {
+  } else if (Array.isArray(value) || Array.isArray(pattern)) {
     return false;
   }
   if (isObject(value) && isObject(pattern)) {

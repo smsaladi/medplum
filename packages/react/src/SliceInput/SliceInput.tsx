@@ -3,6 +3,7 @@ import {
   ElementsContextType,
   InternalSchemaElement,
   SliceDefinitionWithTypes,
+  applyDefaultValuesToElement,
   buildElementsContext,
   getPropertyDisplayName,
   isEmpty,
@@ -18,6 +19,7 @@ import { ArrayAddButton } from '../buttons/ArrayAddButton';
 import { ArrayRemoveButton } from '../buttons/ArrayRemoveButton';
 import { killEvent } from '../utils/dom';
 import { maybeWrapWithContext } from '../utils/maybeWrapWithContext';
+import { getPathDifference } from '@medplum/core';
 
 export interface SliceInputProps extends BaseInputProps {
   readonly slice: SliceDefinitionWithTypes;
@@ -34,18 +36,27 @@ export function SliceInput(props: SliceInputProps): JSX.Element | null {
   const sliceElements = slice.typeSchema?.elements ?? slice.elements;
 
   const parentElementsContextValue = useContext(ElementsContext);
+  // if (!(props.path in sliceElements)) {
+  // console.log('sliceElements', sliceElements, parentElementsContextValue.elements);
+  //   sliceElements[''] = slice;
+  // }
 
   const contextValue: ElementsContextType | undefined = useMemo(() => {
-    if (isPopulated(sliceElements)) {
-      return buildElementsContext({
-        parentContext: parentElementsContextValue,
-        elements: sliceElements,
-        path: props.path,
-        profileUrl: slice.typeSchema?.url,
-      });
+    if (!isPopulated(sliceElements)) {
+      console.assert(false, `${props.path}:${slice.name}: expected slice.elements to be populated`);
+      return undefined;
     }
-    return undefined;
-  }, [parentElementsContextValue, props.path, slice.typeSchema?.url, sliceElements]);
+
+    const result = buildElementsContext({
+      parentContext: parentElementsContextValue,
+      elements: sliceElements,
+      path: props.path,
+      profileUrl: slice.typeSchema?.url,
+    });
+
+    console.assert(Boolean(result), `${props.path}:${slice.name}: Expected new elements context for slice`);
+    return result;
+  }, [parentElementsContextValue, property, props.path, slice.name, slice.typeSchema?.url, sliceElements]);
 
   function setValuesWrapper(newValues: any[]): void {
     setValues(newValues);
@@ -113,7 +124,9 @@ export function SliceInput(props: SliceInputProps): JSX.Element | null {
               propertyDisplayName={propertyDisplayName}
               onClick={(e: MouseEvent) => {
                 killEvent(e);
-                const newValues = [...values, undefined];
+                const newValue = applyDefaultValuesToElement(Object.create(null), contextValue.elements);
+                console.log('huzzah?', newValue);
+                const newValues = [...values, newValue];
                 setValuesWrapper(newValues);
               }}
               testId={props.testId && `${props.testId}-add`}

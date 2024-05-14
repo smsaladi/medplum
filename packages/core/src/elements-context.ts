@@ -83,6 +83,7 @@ function mergeElementsForContext(
     for (const [elementPath, element] of Object.entries(parentContext.elementsByPath)) {
       const key = getPathDifference(path, elementPath);
       if (key !== undefined) {
+        console.log('parent element', path, key, element);
         result[key] = element;
       }
     }
@@ -91,8 +92,12 @@ function mergeElementsForContext(
   let usedNewElements = false;
   if (elements) {
     for (const [key, element] of Object.entries(elements)) {
+      // console.log(`new element path=[${path}] key=${key}`, element);
       if (!(key in result)) {
         result[key] = element;
+        if (key === '') {
+          // debugger;
+        }
         usedNewElements = true;
       }
     }

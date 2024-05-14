@@ -87,19 +87,21 @@ const USCoreStructureDefinitionFiles = [
   'StructureDefinition-us-core-implantable-device.json',
   'StructureDefinition-us-core-blood-pressure.json',
   'StructureDefinition-us-core-medicationrequest.json',
+  'StructureDefinition-us-core-careplan.json',
+  'StructureDefinition-us-core-condition-problems-health-concerns.json',
 ];
 
-const BUILD_USCORE = false;
+const BUILD_USCORE = true;
 
 export function main(): void {
-  writeStructureDefinitions();
-  writeSearchParameters();
+  // writeStructureDefinitions();
+  // writeSearchParameters();
 
   if (BUILD_USCORE) {
     // To build USCore, download and expand a USCore Implementation Guide package file,
     // such as https://hl7.org/fhir/us/core/STU5.0.1/package.tgz which is linked to
     // from https://hl7.org/fhir/us/core/STU5.0.1/downloads.html
-    buildUSCoreStructureDefinitions('/absolute/path/to/expanded/package-file', [
+    buildUSCoreStructureDefinitions('/Users/mattlong/Downloads/uscore-5.0.1', [
       resolve(__dirname, '../../mock/src/mocks/uscore/uscore-v5.0.1-structuredefinitions.json'),
       resolve(__dirname, '../../definitions/dist/fhir/r4/testing/uscore-v5.0.1-structuredefinitions.json'),
     ]);

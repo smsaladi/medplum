@@ -1,5 +1,5 @@
 import { ElementsContextType, buildElementsContext } from './elements-context';
-import { SliceDefinitionWithTypes, isSliceDefinitionWithTypes } from './typeschema/slices';
+import { SliceDefinitionWithTypes, isSliceDefinitionWithTypes, sortSliceDefinitions } from './typeschema/slices';
 import {
   InternalSchemaElement,
   InternalTypeSchema,
@@ -231,7 +231,7 @@ export class SchemaCrawler {
   private crawlSlicingImpl(slicing: SlicingRules, path: string): void {
     const visitorSlicing = this.prepareSlices(slicing.slices, slicing);
 
-    for (const slice of visitorSlicing.slices) {
+    for (const slice of visitorSlicing.slices.toSorted(sortSliceDefinitions)) {
       if (this.sliceAllowList === undefined || this.sliceAllowList.includes(slice)) {
         this.crawlSliceImpl(slice, path, visitorSlicing);
       }
@@ -252,7 +252,10 @@ export class SchemaCrawler {
 
     let elementsContext: ElementsContextType | undefined;
 
-    const sliceElements = sliceSchema?.elements ?? slice.elements;
+    const sliceElements: Record<string, InternalSchemaElement> = {
+      // '': slice,
+      ...(sliceSchema?.elements ?? slice.elements),
+    };
     if (isPopulated(sliceElements)) {
       elementsContext = buildElementsContext({
         path,

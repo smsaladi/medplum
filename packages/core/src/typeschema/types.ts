@@ -258,6 +258,7 @@ class StructureDefinitionParser {
         // Slice element, part of some slice definition
         if (this.slicingContext?.current) {
           const path = elementPath(element, this.slicingContext.path);
+          // console.log('ADD slice element', this.slicingContext.current.name, path);
           this.slicingContext.current.elements[path] = this.parseElementDefinition(element);
         }
       } else {
@@ -440,7 +441,7 @@ class StructureDefinitionParser {
       ...this.parseElementDefinition(element),
       name: element.sliceName ?? '',
       definition: element.definition,
-      elements: {},
+      elements: { '': this.parseElementDefinition(element) },
     };
   }
 

@@ -143,6 +143,10 @@ class DefaultValueVisitor implements SchemaVisitor {
     }
     const elementValues: any[] = [];
 
+    if (path.startsWith('CarePlan.category')) {
+      console.log('onEnterElement', path, element);
+    }
+
     for (const parentValue of parentValues) {
       if (parentValue === undefined) {
         continue;
@@ -311,6 +315,10 @@ function getValueAtKey(
   element: InternalSchemaElement,
   elements: Record<string, InternalSchemaElement>
 ): any {
+  if (key === '') {
+    return value;
+  }
+
   const keyParts = key.split('.');
   let last: any = value;
   let answer: any;
@@ -385,7 +393,11 @@ export function applyFixedOrPatternValue(
         if (element.fixed) {
           item[keyPart] ??= element.fixed.value;
         } else if (element.pattern) {
-          item[keyPart] = applyPattern(item[keyPart], element.pattern.value);
+          if (keyPart === '') {
+            Object.assign(item, applyPattern(item, element.pattern.value));
+          } else {
+            item[keyPart] = applyPattern(item[keyPart], element.pattern.value);
+          }
         }
       }
     } else {

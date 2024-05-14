@@ -595,6 +595,12 @@ export function matchDiscriminant(
         return false;
       }
       if (sliceElement.pattern) {
+        console.log(
+          'PATTERN',
+          JSON.stringify(sliceElement.pattern),
+          JSON.stringify(value),
+          deepIncludes(value, sliceElement.pattern)
+        );
         return deepIncludes(value, sliceElement.pattern);
       }
       if (sliceElement.fixed) {
@@ -602,6 +608,7 @@ export function matchDiscriminant(
       }
 
       if (sliceElement.binding?.strength === 'required' && sliceElement.binding.valueSet) {
+        console.log('BINDING', JSON.stringify(sliceElement.binding));
         // This cannot be implemented correctly without asynchronous validation, so make it permissive for now.
         // Ideally this should check something like value.value.coding.some((code) => isValidCode(sliceElement.binding.valueSet, code))
         // where isValidCode is a function that checks if the code is included in the expansion of the ValueSet

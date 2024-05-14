@@ -6,7 +6,11 @@
     "lib": ["esnext", "dom", "dom.iterable"],
     "outDir": "dist/types",
     "noEmit": false,
-    "emitDeclarationOnly": true
+    "paths": {
+      "@medplum/core": ["../core/src"],
+      "@medplum/react-hooks": ["../react-hooks/src"],
+    },
+    "emitDeclarationOnly": true,
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
 }

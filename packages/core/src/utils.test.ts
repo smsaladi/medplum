@@ -663,7 +663,7 @@ describe('Core Utils', () => {
   test('deepIncludes', () => {
     expect(deepIncludes({ value: 1 }, { value: 1 })).toEqual(true);
     expect(deepIncludes({ value: 1 }, { value: 2 })).toEqual(false);
-    expect(deepIncludes({ value: 1 }, { value: {} })).toEqual(false);
+    expect(deepIncludes({ value: 1 }, { value: {} })).toEqual(true);
     expect(deepIncludes({ value: {} }, { value: {} })).toEqual(true);
     expect(deepIncludes({ value: { x: 1 } }, { value: { x: 1 } })).toEqual(true);
 
@@ -675,6 +675,23 @@ describe('Core Utils', () => {
 
     expect(deepIncludes([{ value: 1 }], { value: 1 })).toEqual(false);
     expect(deepIncludes([{ value: 1 }], [{ y: 2, z: 3 }])).toEqual(false);
+
+    // FHIR "empty" values
+    expect(
+      deepIncludes({ coding: [{ system: 'http://hl7.org/fhir/us/core/CodeSystem/us-core-tags', code: 'sdoh' }] }, {})
+    ).toEqual(true);
+    expect(
+      deepIncludes(
+        { coding: [{ system: 'http://hl7.org/fhir/us/core/CodeSystem/us-core-tags', code: 'sdoh' }] },
+        undefined
+      )
+    ).toEqual(true);
+    expect(
+      deepIncludes({}, { coding: [{ system: 'http://hl7.org/fhir/us/core/CodeSystem/us-core-tags', code: 'sdoh' }] })
+    ).toEqual(false);
+
+    expect(deepIncludes({ foo: {} }, { foo: undefined })).toEqual(true);
+    expect(deepIncludes({ foo: undefined }, { foo: {} })).toEqual(true);
 
     const value = {
       type: 'CodeableConcept',

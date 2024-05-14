@@ -7,7 +7,7 @@ import {
   tryGetProfile,
 } from './typeschema/types';
 import { isPopulated } from './utils';
-import { Observation, Patient, StructureDefinition } from '@medplum/fhirtypes';
+import { CarePlan, Condition, Observation, Patient, StructureDefinition } from '@medplum/fhirtypes';
 import {
   applyDefaultValuesToElement,
   applyDefaultValuesToResource,
@@ -326,6 +326,64 @@ describe('apply default values', () => {
 
       delete elem.pattern;
       expect(elem.pattern).toBeUndefined();
+    });
+  });
+
+  describe.only('US Core Condition Problems and Health Concerns Profile', () => {
+    const profileUrl = `${HTTP_HL7_ORG}/fhir/us/core/StructureDefinition/us-core-condition-problems-health-concerns`;
+    const profileUrls = [profileUrl];
+
+    let schema: InternalTypeSchema;
+    beforeAll(() => {
+      loadProfiles(profileUrls);
+      schema = tryGetProfile(profileUrl) as InternalTypeSchema;
+      if (!schema) {
+        fail(`Failed to load schema for ${profileUrl}`);
+      }
+    });
+    test('slice by pattern: $this', () => {
+      // casting to avoid specifying any required (according to typescript) fields since that's the purpose of the code being tested
+      const resource = { resourceType: 'Condition' } as Condition;
+      const withDefaults = applyDefaultValuesToResource(resource, schema);
+
+      console.debug(JSON.stringify(withDefaults, null, 2));
+      expect(withDefaults).toEqual({
+        resourceType: 'Condition',
+      });
+    });
+  });
+
+  describe('US Core CarePlan Profile', () => {
+    const profileUrl = `${HTTP_HL7_ORG}/fhir/us/core/StructureDefinition/us-core-careplan`;
+    const profileUrls = [profileUrl];
+
+    let schema: InternalTypeSchema;
+    beforeAll(() => {
+      loadProfiles(profileUrls);
+      schema = tryGetProfile(profileUrl) as InternalTypeSchema;
+      if (!schema) {
+        fail(`Failed to load schema for ${profileUrl}`);
+      }
+    });
+    test('slice by pattern: $this', () => {
+      // casting to avoid specifying any required (according to typescript) fields since that's the purpose of the code being tested
+      const resource = { resourceType: 'CarePlan' } as CarePlan;
+      const withDefaults = applyDefaultValuesToResource(resource, schema);
+
+      console.debug(JSON.stringify(withDefaults, null, 2));
+      expect(withDefaults).toEqual({
+        resourceType: 'CarePlan',
+        category: [
+          {
+            coding: [
+              {
+                code: 'assess-plan',
+                system: 'http://hl7.org/fhir/us/core/CodeSystem/careplan-category',
+              },
+            ],
+          },
+        ],
+      });
     });
   });
 });

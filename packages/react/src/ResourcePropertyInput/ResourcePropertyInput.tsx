@@ -166,9 +166,15 @@ export function ElementDefinitionTypeInput(props: ElementDefinitionTypeInputProp
   const required = props.min !== undefined && props.min > 0;
 
   const propertyType = props.elementDefinitionType.code;
+  function me(func: () => void): void {
+    if (props.path.includes('category')) {
+      func();
+    }
+  }
 
   const elementsContext = useContext(ElementsContext);
   const defaultValue = useMemo(() => {
+    const toLog: (() => void)[] = [];
     if (!isComplexTypeCode(propertyType)) {
       return props.defaultValue;
     }
@@ -178,13 +184,16 @@ export function ElementDefinitionTypeInput(props: ElementDefinitionTypeInputProp
     }
 
     const withDefaults = Object.create(null);
+    me(() => console.log('apply default value', props.path, elementsContext.path));
     if (elementsContext.path === props.path) {
+      me(() => console.log('exact match', elementsContext.elements));
       applyDefaultValuesToElement(withDefaults, elementsContext.elements);
     } else {
       const key = getPathDifference(elementsContext.path, props.path);
       if (key === undefined) {
         return props.defaultValue;
       }
+      me(() => console.log('path difference', key));
       applyDefaultValuesToElement(withDefaults, elementsContext.elements, key);
     }
 
