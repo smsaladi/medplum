@@ -20,6 +20,10 @@ export function getElementsToRender(
   inputElements: Record<string, InternalSchemaElement>
 ): [string, InternalSchemaElement][] {
   const result = Object.entries(inputElements).filter(([key, element]) => {
+    if (key === '') {
+      return false;
+    }
+
     if (!isPopulated(element.type)) {
       return false;
     }
