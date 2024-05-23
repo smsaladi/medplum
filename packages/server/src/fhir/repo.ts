@@ -2,6 +2,7 @@ import {
   AccessPolicyInteraction,
   OperationOutcomeError,
   Operator,
+  PropertyType,
   SearchParameterDetails,
   SearchParameterType,
   SearchRequest,
@@ -186,6 +187,8 @@ const lookupTables: LookupTable[] = [
   new ReferenceTable(),
   new CodingTable(),
 ];
+
+const USE_NEW = true;
 
 /**
  * The Repository class manages reading and writing to the FHIR repository.
@@ -1842,9 +1845,9 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
     for (const field of fieldsToRestore) {
       this.removeField(input, field);
       if (original) {
-        const value = original[field as keyof T];
-        if (value) {
-          input[field as keyof T] = value;
+        const value = getValueAtPath(original, field);
+        if (value.length) {
+          setValueAtPath(input, field, value);
         }
       }
     }
@@ -1859,10 +1862,14 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
    * @returns The new document with the field removed.
    */
   private removeField<T extends Resource>(input: T, path: string): T {
-    const patch: Operation[] = [{ op: 'remove', path: `/${path.replaceAll('.', '/')}` }];
-    // applyPatch returns errors if the value is missing
-    // but we don't care if the value is missing in this case
-    applyPatch(input, patch);
+    if (USE_NEW) {
+      removeValueAtPath(input, path);
+    } else {
+      const patch: Operation[] = [{ op: 'remove', path: `/${path.replaceAll('.', '/')}` }];
+      // applyPatch returns errors if the value is missing
+      // but we don't care if the value is missing in this case
+      console.log('applyPatch', applyPatch(input, patch));
+    }
     return input;
   }
 
@@ -2100,4 +2107,144 @@ export function getSystemRepo(): Repository {
     },
     // System repo does not have an associated Project; it can write to any
   });
+}
+
+function lowercaseFirstLetter(str: string): string {
+  return str.charAt(0).toLowerCase() + str.slice(1);
+}
+
+function getChoiceOfTypeKeys(input: any, choiceOfTypeKey: string): string[] {
+  if (!choiceOfTypeKey.endsWith('[x]')) {
+    throw new Error('choiceOfTypeKey must end with [x]');
+  }
+
+  const baseKey = choiceOfTypeKey.slice(0, -3);
+  return Object.keys(input).filter((k) => {
+    if (k.startsWith(baseKey)) {
+      const rest = k.substring(baseKey.length);
+      if (rest in PropertyType || lowercaseFirstLetter(rest) in PropertyType) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
+function resolveKeyPart(input: any, keyPart: string): string[] {
+  if (keyPart.endsWith('[x]')) {
+    return getChoiceOfTypeKeys(input, keyPart);
+  } else {
+    return [keyPart];
+  }
+}
+
+function removeValueAtPath(input: any, path: string): void {
+  let last = [input];
+
+  const pathParts = path.split('.');
+  for (let i = 0; i < pathParts.length; i++) {
+    const pathPart = pathParts[i];
+
+    if (i === pathParts.length - 1) {
+      // final key part
+      last.forEach((item) => {
+        resolveKeyPart(item, pathPart).forEach((k) => {
+          delete item[k];
+        });
+      });
+    } else {
+      // intermediate key part
+      const next: any[] = [];
+      for (const lastItem of last) {
+        for (const k of resolveKeyPart(lastItem, pathPart)) {
+          if (lastItem[k] !== undefined) {
+            if (Array.isArray(lastItem[k])) {
+              next.push(...lastItem[k]);
+            } else {
+              next.push(lastItem[k]);
+            }
+          }
+        }
+      }
+      last = next;
+      // last = last.flatMap((item) => {
+      // return resolveKeyPart(item, pathPart)
+      // .flatMap((k) => item[k])
+      // .filter((v) => v !== undefined);
+      // });
+    }
+  }
+}
+
+function restoreValueAtPath(source: any, target: any, path: string): any[] {
+  let last = [source];
+  const answer: [string, any][] = [];
+
+  const pathParts = path.split('.');
+  for (let i = 0; i < pathParts.length; i++) {
+    const pathPart = pathParts[i];
+
+    if (i === pathParts.length - 1) {
+      // final key part
+      last.forEach((item) => {
+        resolveKeyPart(item, pathPart).forEach((k) => {
+          if (item[k] !== undefined) {
+            answer.push(item[k]);
+          }
+        });
+      });
+    } else {
+      // intermediate key part
+      const next: any[] = [];
+      for (const lastItem of last) {
+        for (const k of resolveKeyPart(lastItem, pathPart)) {
+          if (lastItem[k] !== undefined) {
+            if (Array.isArray(lastItem[k])) {
+              next.push(...lastItem[k]);
+            } else {
+              next.push(lastItem[k]);
+            }
+          }
+        }
+      }
+      last = next;
+    }
+  }
+  return answer;
+}
+
+function setValueAtPath(input: any, path: string, value: any[]): void {
+  let last = [input];
+
+  const pathParts = path.split('.');
+  for (let i = 0; i < pathParts.length; i++) {
+    const pathPart = pathParts[i];
+
+    if (i === pathParts.length - 1) {
+      // final key part
+      if (last.length !== value.length) {
+        console.warn('setValueAtPath: last.length !== value.length', last, value);
+      }
+      last.forEach((item) => {
+        resolveKeyPart(item, pathPart).forEach((k) => {
+          item[k] = value.shift();
+        });
+      });
+    } else {
+      // intermediate key part
+      const next: any[] = [];
+      for (const lastItem of last) {
+        for (const k of resolveKeyPart(lastItem, pathPart)) {
+          if (lastItem[k] !== undefined) {
+            if (Array.isArray(lastItem[k])) {
+              next.push(...lastItem[k]);
+            } else {
+              next.push(lastItem[k]);
+            }
+          }
+        }
+      }
+      last = next;
+    }
+  }
 }
