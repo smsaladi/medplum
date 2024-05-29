@@ -172,7 +172,7 @@ export interface CacheEntry<T extends Resource = Resource> {
 }
 
 export type ReadResourceOptions = {
-  checkCacheOnly?: boolean;
+  allowReadFrom?: ('cache' | 'database')[];
 };
 
 /**
@@ -254,21 +254,25 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
       throw new OperationOutcomeError(forbidden);
     }
 
-    const cacheRecord = await getCacheEntry<T>(resourceType, id);
-    if (cacheRecord) {
-      // This is an optimization to avoid a database query.
-      // However, it depends on all values in the cache having "meta.compartment"
-      // Old versions of Medplum did not populate "meta.compartment"
-      // So this optimization is blocked until we add a migration.
-      // if (!this.canReadCacheEntry(cacheRecord)) {
-      //   throw new OperationOutcomeError(notFound);
-      // }
-      if (this.canReadCacheEntry(cacheRecord)) {
-        return cacheRecord.resource;
+    const allowReadFrom = options?.allowReadFrom ?? (['cache', 'database'] as const);
+
+    if (allowReadFrom.includes('cache')) {
+      const cacheRecord = await getCacheEntry<T>(resourceType, id);
+      if (cacheRecord) {
+        // This is an optimization to avoid a database query.
+        // However, it depends on all values in the cache having "meta.compartment"
+        // Old versions of Medplum did not populate "meta.compartment"
+        // So this optimization is blocked until we add a migration.
+        // if (!this.canReadCacheEntry(cacheRecord)) {
+        //   throw new OperationOutcomeError(notFound);
+        // }
+        if (this.canReadCacheEntry(cacheRecord)) {
+          return cacheRecord.resource;
+        }
       }
     }
 
-    if (options?.checkCacheOnly) {
+    if (!allowReadFrom.includes('database')) {
       throw new OperationOutcomeError(notFound);
     }
 
@@ -1156,6 +1160,7 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
 
     for (const policy of this.context.accessPolicy.resource) {
       if (policy.resourceType === resourceType) {
+        console.log({ policy });
         const policyCompartmentId = resolveId(policy.compartment);
         if (policyCompartmentId) {
           // Deprecated - to be removed
@@ -1164,6 +1169,7 @@ export class Repository extends BaseRepository implements FhirRepository<PoolCli
         } else if (policy.criteria) {
           // Add subquery for access policy criteria.
           const searchRequest = parseSearchRequest(policy.criteria);
+          console.log({ searchRequest });
           const accessPolicyExpression = buildSearchExpression(builder, searchRequest.resourceType, searchRequest);
           if (accessPolicyExpression) {
             expressions.push(accessPolicyExpression);
