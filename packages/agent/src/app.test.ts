@@ -24,15 +24,21 @@ const medplum = new MockClient();
 
 describe('App', () => {
   beforeAll(async () => {
-    console.log = jest.fn();
     medplum.router.router.add('POST', ':resourceType/:id/$execute', async () => {
       return [allOk, {} as Resource];
     });
   });
 
+  beforeEach(() => {
+    jest.spyOn(global.console, 'log');
+    jest.spyOn(global.console, 'error');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('Runs successfully', async () => {
-    const originalConsoleLog = console.log;
-    console.log = jest.fn();
     const mockServer = new Server('wss://example.com/ws/agent');
     const state = {
       mySocket: undefined as Client | undefined,
@@ -97,7 +103,6 @@ describe('App', () => {
     });
 
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Unknown message type: unknown'));
-    console.log = originalConsoleLog;
   });
 
   test('Reconnect after connection closed', async () => {
@@ -210,11 +215,6 @@ describe('App', () => {
   });
 
   test('Unknown endpoint protocol', async () => {
-    const originalConsoleLog = console.log;
-    const originalConsoleError = console.error;
-    console.log = jest.fn();
-    console.error = jest.fn();
-
     medplum.router.router.add('POST', ':resourceType/:id/$execute', async () => {
       return [allOk, {} as Resource];
     });
@@ -267,8 +267,6 @@ describe('App', () => {
     });
 
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Unsupported endpoint type: foo:'));
-    console.log = originalConsoleLog;
-    console.error = originalConsoleError;
   });
 
   test('Reload config', async () => {
@@ -620,9 +618,6 @@ describe('App', () => {
       gotAgentError: false,
     };
 
-    const originalConsoleLog = console.log;
-    console.log = jest.fn();
-
     medplum.router.router.add('POST', ':resourceType/:id/$execute', async () => {
       return [allOk, {} as Resource];
     });
@@ -911,8 +906,6 @@ describe('App', () => {
     await new Promise<void>((resolve) => {
       mockServer.stop(resolve);
     });
-
-    console.log = originalConsoleLog;
   });
 
   test("Setting a channel.endpoint.status to 'off'", async () => {
@@ -921,9 +914,6 @@ describe('App', () => {
       gotAgentReloadResponse: false,
       gotAgentError: false,
     };
-
-    const originalConsoleLog = console.log;
-    console.log = jest.fn();
 
     medplum.router.router.add('POST', ':resourceType/:id/$execute', async () => {
       return [allOk, {} as Resource];
@@ -1158,7 +1148,5 @@ describe('App', () => {
     await new Promise<void>((resolve) => {
       mockServer.stop(resolve);
     });
-
-    console.log = originalConsoleLog;
   });
 });

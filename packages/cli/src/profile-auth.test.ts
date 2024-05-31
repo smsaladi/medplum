@@ -31,7 +31,11 @@ const originalWindow = globalThis.window;
 
 describe('Profiles Auth', () => {
   beforeEach(async () => {
-    console.log = jest.fn();
+    jest.spyOn(global.console, 'log');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   beforeAll(async () => {

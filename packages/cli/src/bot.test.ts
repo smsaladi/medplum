@@ -38,13 +38,14 @@ describe('CLI Bots', () => {
     jest.clearAllMocks();
     process.env = { ...env };
     medplum = new MockClient();
-    console.log = jest.fn();
+    jest.spyOn(global.console, 'log');
 
     (createMedplumClient as unknown as jest.Mock).mockImplementation(async () => medplum);
   });
 
   afterEach(() => {
     process.env = env;
+    jest.restoreAllMocks();
   });
 
   test('Deploy bot missing name', async () => {

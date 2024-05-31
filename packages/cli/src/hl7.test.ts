@@ -4,9 +4,16 @@ import { generateSampleHl7Message } from './hl7';
 import { main } from './index';
 
 describe('HL7 commands', () => {
+  beforeEach(() => {
+    jest.spyOn(global.console, 'log');
+    jest.spyOn(global.console, 'error');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   test('Client and server', async () => {
-    console.error = jest.fn();
-    console.log = jest.fn();
     process.exit = jest.fn<never, any>().mockImplementation(function exit(exitCode: number) {
       throw new Error(`Process exited with exit code ${exitCode}`);
     }) as unknown as typeof process.exit;

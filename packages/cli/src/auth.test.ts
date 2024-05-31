@@ -40,14 +40,15 @@ describe('CLI auth', () => {
     jest.clearAllMocks();
     process.env = { ...env };
     medplum = new MockClient();
-    console.log = jest.fn();
-    console.error = jest.fn();
+    jest.spyOn(global.console, 'log');
+    jest.spyOn(global.console, 'error');
 
     (createMedplumClient as unknown as jest.Mock).mockImplementation(async () => medplum);
   });
 
   afterEach(() => {
     process.env = env;
+    jest.restoreAllMocks();
   });
 
   test('Login success', async () => {

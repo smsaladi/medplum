@@ -3,8 +3,12 @@ import { resolve } from 'path';
 import { main } from './index';
 
 describe('Infra', () => {
-  beforeEach(() => {
-    console.log = jest.fn();
+  beforeAll(() => {
+    jest.spyOn(global.console, 'log');
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
   });
 
   test('Missing config', () => {

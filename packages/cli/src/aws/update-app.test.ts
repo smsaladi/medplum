@@ -150,9 +150,12 @@ describe('update-app command', () => {
       CloudFrontClientResolvedConfig
     >;
     cloudFrontMock.on(CreateInvalidationCommand).resolves({});
+    jest.spyOn(global.console, 'log');
+    jest.spyOn(global.console, 'error');
   });
 
   afterEach(() => {
+    jest.resetAllMocks();
     (fetch as jest.MockedFunction<typeof fetch>).mockReset();
   });
 

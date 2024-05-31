@@ -19,15 +19,12 @@ jest.mock('node-windows');
 const medplum = new MockClient();
 
 describe('Agent Net Utils', () => {
-  let originalLog: typeof console.log;
-
   beforeAll(() => {
-    originalLog = console.log;
-    console.log = jest.fn();
+    jest.spyOn(global.console, 'log');
   });
 
   afterAll(() => {
-    console.log = originalLog;
+    jest.restoreAllMocks();
   });
 
   describe('Ping -- Within One App Instance', () => {

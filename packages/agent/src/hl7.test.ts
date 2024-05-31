@@ -13,8 +13,6 @@ let endpoint: Endpoint;
 
 describe('HL7', () => {
   beforeAll(async () => {
-    console.log = jest.fn();
-
     medplum.router.router.add('POST', ':resourceType/:id/$execute', async () => {
       return [allOk, {} as Resource];
     });

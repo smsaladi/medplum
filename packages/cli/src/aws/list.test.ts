@@ -106,8 +106,12 @@ describe('list command', () => {
   });
 
   test('List command', async () => {
-    console.log = jest.fn();
-    await main(['node', 'index.js', 'aws', 'list']);
-    expect(console.log).toHaveBeenCalledWith('Stack ID:              123');
+    const spy = jest.spyOn(global.console, 'log');
+    try {
+      await main(['node', 'index.js', 'aws', 'list']);
+      expect(console.log).toHaveBeenCalledWith('Stack ID:              123');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

@@ -5,8 +5,7 @@ import { main } from './main';
 
 describe('Main', () => {
   beforeEach(() => {
-    console.log = jest.fn();
-
+    jest.spyOn(global.console, 'log');
     jest.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit');
     });

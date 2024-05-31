@@ -22,7 +22,11 @@ const testHomeDir = mkdtempSync(__dirname + sep + 'storage-');
 
 describe('Profiles', () => {
   beforeEach(async () => {
-    console.log = jest.fn();
+    jest.spyOn(global.console, 'log');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   let fetch: any;

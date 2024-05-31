@@ -96,16 +96,19 @@ describe('describe command', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(global.console, 'log');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   test('Describe command', async () => {
-    console.log = jest.fn();
     await main(['node', 'index.js', 'aws', 'describe', 'dev']);
     expect(console.log).toHaveBeenCalledWith('Stack ID:              123');
   });
 
   test('Describe not found', async () => {
-    console.log = jest.fn();
     await expect(main(['node', 'index.js', 'aws', 'describe', 'not-found'])).rejects.toThrow(
       'Process exited with exit code 1'
     );

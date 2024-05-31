@@ -198,42 +198,45 @@ describe('init command', () => {
 
     const filename = `test-${randomUUID()}.json`;
 
-    console.log = jest.fn();
+    const spy = jest.spyOn(global.console, 'log');
+    try {
+      readline.createInterface = jest.fn(() =>
+        mockReadline(
+          'y', // Do you want to continue without AWS credentials?
+          'foo',
+          filename,
+          'us-bad-1', // Special fake region for mock clients
+          'account-123',
+          'TestStack',
+          'test.example.com',
+          'support@example.com',
+          '', // default API domain
+          '', // default app domain
+          '', // default storage domain
+          '', // default storage bucket
+          '', // default availability zones
+          'y', // Yes, create a database
+          '', // default database instances
+          '', // default server instances
+          '', // default server memory
+          '', // default server cpu
+          '', // default server image
+          'y', // Yes, request api certificate
+          '', // default DNS validation
+          'y', // Yes, request app certificate
+          '', // default DNS validation
+          'y', // Yes, request storage certificate
+          '', // default DNS validation
+          'y' // Yes, write to Parameter Store
+        )
+      );
 
-    readline.createInterface = jest.fn(() =>
-      mockReadline(
-        'y', // Do you want to continue without AWS credentials?
-        'foo',
-        filename,
-        'us-bad-1', // Special fake region for mock clients
-        'account-123',
-        'TestStack',
-        'test.example.com',
-        'support@example.com',
-        '', // default API domain
-        '', // default app domain
-        '', // default storage domain
-        '', // default storage bucket
-        '', // default availability zones
-        'y', // Yes, create a database
-        '', // default database instances
-        '', // default server instances
-        '', // default server memory
-        '', // default server cpu
-        '', // default server image
-        'y', // Yes, request api certificate
-        '', // default DNS validation
-        'y', // Yes, request app certificate
-        '', // default DNS validation
-        'y', // Yes, request storage certificate
-        '', // default DNS validation
-        'y' // Yes, write to Parameter Store
-      )
-    );
+      await main(['node', 'index.js', 'aws', 'init']);
 
-    await main(['node', 'index.js', 'aws', 'init']);
-
-    expect(console.log).toHaveBeenCalledWith('Warning: Unable to get AWS account ID', 'Invalid region');
+      expect(console.log).toHaveBeenCalledWith('Warning: Unable to get AWS account ID', 'Invalid region');
+    } finally {
+      spy.mockRestore();
+    }
 
     const config = JSON.parse(readFileSync(filename, 'utf8'));
     expect(config).toMatchObject({

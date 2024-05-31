@@ -39,8 +39,12 @@ describe('CLI Project', () => {
     medplum = new MockClient({ storage: new FileSystemStorage('default') });
     (createMedplumClient as unknown as jest.Mock).mockImplementation(async () => medplum);
 
-    console.log = jest.fn();
-    console.error = jest.fn();
+    jest.spyOn(global.console, 'log');
+    jest.spyOn(global.console, 'error');
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   test('Project List', async () => {

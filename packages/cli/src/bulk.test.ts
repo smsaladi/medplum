@@ -157,9 +157,13 @@ describe('CLI Bulk Commands', () => {
 
       (createMedplumClient as unknown as jest.Mock).mockImplementation(async () => medplum);
 
-      console.log = jest.fn();
-      console.error = jest.fn();
+      jest.spyOn(global.console, 'log');
+      jest.spyOn(global.console, 'error');
       process.exit = jest.fn() as never;
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     test('system', async () => {
@@ -197,10 +201,10 @@ describe('CLI Bulk Commands', () => {
     let fetch: any;
 
     beforeEach(() => {
-      console.log = jest.fn();
-      console.error = jest.fn();
-      jest.resetModules();
       jest.clearAllMocks();
+      jest.spyOn(global.console, 'log');
+      jest.spyOn(global.console, 'error');
+      jest.resetModules();
       fetch = jest.fn(async () => {
         return {
           status: 200,
@@ -230,6 +234,9 @@ describe('CLI Bulk Commands', () => {
       });
       medplum = new MedplumClient({ fetch });
       (createMedplumClient as unknown as jest.Mock).mockImplementation(async () => medplum);
+    });
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     test('success', async () => {

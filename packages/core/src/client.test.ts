@@ -2879,7 +2879,7 @@ describe('Client', () => {
       });
     });
 
-    console.log = jest.fn();
+    const consoleLogSpy = jest.spyOn(global.console, 'log');
     const client = new MedplumClient({ fetch, verbose: true });
     const result = await client.readResource('Patient', '123');
     expect(result).toBeDefined();
@@ -2894,6 +2894,7 @@ describe('Client', () => {
     expect(console.log).toHaveBeenCalledWith('> X-Medplum: extended');
     expect(console.log).toHaveBeenCalledWith('< 200 OK');
     expect(console.log).toHaveBeenCalledWith('< foo: bar');
+    consoleLogSpy.mockRestore();
   });
 });
 
