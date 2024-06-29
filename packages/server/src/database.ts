@@ -28,6 +28,10 @@ export async function initDatabase(serverConfig: MedplumServerConfig): Promise<v
     ssl: config.ssl,
     max: 100,
     idle_timeout: 120,
+    connection: {
+      statement_timeout: config.queryTimeout ?? 60000,
+      default_transaction_isolation: 'repeatable read' as const,
+    },
   };
 
   if (serverConfig.databaseProxyEndpoint) {
@@ -40,15 +44,6 @@ export async function initDatabase(serverConfig: MedplumServerConfig): Promise<v
 
   // pool.on('error', (err) => {
   //   globalLogger.error('Database connection error', err);
-  // });
-
-  // pool.on('connect', (client) => {
-  //   client.query(`SET statement_timeout TO ${config.queryTimeout ?? 60000}`).catch((err) => {
-  //     globalLogger.warn('Failed to set query timeout', err);
-  //   });
-  //   client.query(`SET default_transaction_isolation TO 'REPEATABLE READ'`).catch((err) => {
-  //     globalLogger.warn('Failed to set default transaction isolation', err);
-  //   });
   // });
 
   // Run migrations by default
