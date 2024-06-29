@@ -15,7 +15,7 @@ export async function healthcheckHandler(_req: Request, res: Response): Promise<
 }
 
 async function testPostgres(): Promise<boolean> {
-  return (await getDatabasePool().query(`SELECT 1 AS "status"`)).rows[0].status === 1;
+  return (await getDatabasePool().unsafe(`SELECT 1 AS "status"`))[0].status === 1;
 }
 
 async function testRedis(): Promise<boolean> {

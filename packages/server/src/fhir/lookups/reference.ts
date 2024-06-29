@@ -1,6 +1,6 @@
 import { PropertyType, evalFhirPathTyped, getSearchParameters, isUUID, toTypedValue } from '@medplum/core';
 import { Resource, ResourceType, SearchParameter } from '@medplum/fhirtypes';
-import { PoolClient } from 'pg';
+import postgres from 'postgres';
 import { LookupTable } from './lookuptable';
 
 /**
@@ -25,7 +25,7 @@ export class ReferenceTable extends LookupTable {
     return false;
   }
 
-  async indexResource(client: PoolClient, resource: Resource, create: boolean): Promise<void> {
+  async indexResource(client: postgres.Sql, resource: Resource, create: boolean): Promise<void> {
     if (!create) {
       await this.deleteValuesForResource(client, resource);
     }

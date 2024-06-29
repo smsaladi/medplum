@@ -10,7 +10,7 @@ import { r4ProjectId } from '../seed';
  */
 export async function rebuildR4StructureDefinitions(): Promise<void> {
   const client = getDatabasePool();
-  await client.query(`DELETE FROM "StructureDefinition" WHERE "projectId" = $1`, [r4ProjectId]);
+  await client.unsafe(`DELETE FROM "StructureDefinition" WHERE "projectId" = $1`, [r4ProjectId]);
 
   const systemRepo = getSystemRepo();
   await createStructureDefinitionsForBundle(systemRepo, readJson('fhir/r4/profiles-resources.json') as Bundle);

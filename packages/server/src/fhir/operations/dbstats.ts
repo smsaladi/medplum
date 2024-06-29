@@ -31,9 +31,9 @@ export async function dbStatsHandler(_req: FhirRequest): Promise<FhirResponse> {
       ORDER BY table_size DESC;
       `;
 
-  const result = await client.query(sql);
+  const result = await client.unsafe(sql);
 
-  const tableString = result.rows.map((row) => `${row.table_schema}.${row.table_name}: ${row.table_size}`).join('\n');
+  const tableString = result.map((row) => `${row.table_schema}.${row.table_name}: ${row.table_size}`).join('\n');
 
   return [allOk, buildOutputParameters(operation, { tableString })];
 }

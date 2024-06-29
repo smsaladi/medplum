@@ -1,7 +1,7 @@
 import { OperationOutcomeError, allOk, badRequest, normalizeOperationOutcome } from '@medplum/core';
 import { FhirRequest, FhirResponse } from '@medplum/fhir-router';
 import { CodeSystem, Coding, OperationDefinition } from '@medplum/fhirtypes';
-import { PoolClient } from 'pg';
+import postgres from 'postgres';
 import { requireSuperAdmin } from '../../admin/super';
 import { getAuthenticatedContext } from '../../context';
 import { InsertQuery, SelectQuery } from '../sql';
@@ -83,7 +83,7 @@ export async function codeSystemImportHandler(req: FhirRequest): Promise<FhirRes
 }
 
 export async function importCodeSystem(
-  db: PoolClient,
+  db: postgres.Sql,
   codeSystem: CodeSystem,
   concepts?: Coding[],
   properties?: ImportedProperty[]
@@ -108,7 +108,7 @@ export async function importCodeSystem(
 async function processProperties(
   importedProperties: ImportedProperty[],
   codeSystem: CodeSystem,
-  db: PoolClient
+  db: postgres.Sql
 ): Promise<void> {
   const cache: Record<string, { id: number; isRelationship: boolean }> = Object.create(null);
   for (const imported of importedProperties) {
@@ -155,7 +155,7 @@ async function processProperties(
   }
 }
 
-async function resolveProperty(codeSystem: CodeSystem, code: string, db: PoolClient): Promise<[number, boolean]> {
+async function resolveProperty(codeSystem: CodeSystem, code: string, db: postgres.Sql): Promise<[number, boolean]> {
   let prop = codeSystem.property?.find((p) => p.code === code);
   if (!prop) {
     if (code === codeSystem.hierarchyMeaning || (code === 'parent' && !codeSystem.hierarchyMeaning)) {

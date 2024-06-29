@@ -843,12 +843,12 @@ describe('FHIR Repo', () => {
         subject: createReference(patient),
       });
 
-      const result = await getDatabasePool().query(
+      const result = await getDatabasePool().unsafe(
         'SELECT "code", "system", "value" FROM "Observation_Token" WHERE "resourceId"=$1',
-        [obs1.id]
+        [obs1.id as string]
       );
 
-      expect(result.rows).toMatchObject([
+      expect(result).toMatchObject([
         {
           code: 'code',
           system: 'text',

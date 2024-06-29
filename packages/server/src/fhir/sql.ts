@@ -1,6 +1,6 @@
 import { OperationOutcomeError, append, conflict } from '@medplum/core';
 import { Period } from '@medplum/fhirtypes';
-import { Client, Pool, PoolClient } from 'pg';
+import postgres from 'postgres';
 import { env } from 'process';
 
 const DEBUG = env['SQL_DEBUG'];
@@ -348,7 +348,7 @@ export class SqlBuilder {
     return this.values;
   }
 
-  async execute(conn: Client | Pool | PoolClient): Promise<any[]> {
+  async execute(psql: postgres.Sql): Promise<any[]> {
     const sql = this.toString();
     let startTime = 0;
     if (this.debug) {
@@ -357,13 +357,16 @@ export class SqlBuilder {
       startTime = Date.now();
     }
     try {
-      const result = await conn.query(sql, this.values);
+      const result = await psql.unsafe(
+        sql,
+        this.values.map((val) => (val === undefined ? null : val))
+      );
       if (this.debug) {
         const endTime = Date.now();
         const duration = endTime - startTime;
-        console.log(`result: ${result.rows.length} rows (${duration} ms)`);
+        console.log(`result: ${result.length} rows (${duration} ms)`);
       }
-      return result.rows;
+      return result;
     } catch (err: any) {
       if (err && typeof err === 'object' && err.code === '23505') {
         // Catch duplicate key errors and throw a 409 Conflict
@@ -522,10 +525,10 @@ export class SelectQuery extends BaseQuery implements Expression {
     }
   }
 
-  async execute(conn: Pool | PoolClient): Promise<any[]> {
+  async execute(psql: postgres.Sql): Promise<any[]> {
     const sql = new SqlBuilder();
     this.buildSql(sql);
-    return sql.execute(conn);
+    return sql.execute(psql);
   }
 
   private buildDistinctOn(sql: SqlBuilder): void {
@@ -660,7 +663,7 @@ export class InsertQuery extends BaseQuery {
     return this;
   }
 
-  async execute(conn: Pool | PoolClient): Promise<any[]> {
+  async execute(psql: postgres.Sql): Promise<any[]> {
     const sql = new SqlBuilder();
     sql.append('INSERT INTO ');
     sql.appendIdentifier(this.tableName);
@@ -671,7 +674,7 @@ export class InsertQuery extends BaseQuery {
     if (this.returnColumns) {
       sql.append(` RETURNING (${this.returnColumns.join(', ')})`);
     }
-    return sql.execute(conn);
+    return sql.execute(psql);
   }
 
   private appendColumns(sql: SqlBuilder, columnNames: string[]): void {
@@ -745,7 +748,7 @@ export class DeleteQuery extends BaseQuery {
     this.returnColumns = append(this.returnColumns, column instanceof Column ? column.columnName : column);
     return this;
   }
-  async execute(conn: Pool | PoolClient): Promise<any[]> {
+  async execute(psql: postgres.Sql): Promise<any[]> {
     const sql = new SqlBuilder();
     sql.append('DELETE FROM ');
     sql.appendIdentifier(this.tableName);
@@ -753,7 +756,7 @@ export class DeleteQuery extends BaseQuery {
     if (this.returnColumns) {
       sql.append(` RETURNING (${this.returnColumns.join(', ')})`);
     }
-    return sql.execute(conn);
+    return sql.execute(psql);
   }
 }
 

@@ -1,5 +1,5 @@
 import { CodeSystem, CodeSystemConcept, Resource, ValueSet, ValueSetExpansionContains } from '@medplum/fhirtypes';
-import { PoolClient } from 'pg';
+import postgres from 'postgres';
 import { LookupTable } from './lookuptable';
 
 /**
@@ -25,7 +25,7 @@ export class ValueSetElementTable extends LookupTable {
     return false;
   }
 
-  async indexResource(client: PoolClient, resource: Resource, create: boolean): Promise<void> {
+  async indexResource(client: postgres.Sql, resource: Resource, create: boolean): Promise<void> {
     if (!create) {
       await this.deleteValuesForResource(client, resource);
     }

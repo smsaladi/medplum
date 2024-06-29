@@ -1,7 +1,7 @@
 import { append } from '@medplum/core';
-import { ImportedProperty, importCodeSystem } from '../operations/codesystemimport';
 import { CodeSystem, CodeSystemConcept, CodeSystemConceptProperty, Coding, Resource } from '@medplum/fhirtypes';
-import { Pool, PoolClient } from 'pg';
+import postgres from 'postgres';
+import { ImportedProperty, importCodeSystem } from '../operations/codesystemimport';
 import { parentProperty } from '../operations/utils/terminology';
 import { DeleteQuery } from '../sql';
 import { LookupTable } from './lookuptable';
@@ -27,7 +27,7 @@ export class CodingTable extends LookupTable {
     return false;
   }
 
-  async indexResource(client: PoolClient, resource: Resource, create: boolean): Promise<void> {
+  async indexResource(client: postgres.Sql, resource: Resource, create: boolean): Promise<void> {
     if (resource.resourceType === 'CodeSystem' && (resource.content === 'complete' || resource.content === 'example')) {
       if (!create) {
         await this.deleteValuesForResource(client, resource);
@@ -43,7 +43,7 @@ export class CodingTable extends LookupTable {
    * @param client - The database client.
    * @param resource - The resource to delete.
    */
-  async deleteValuesForResource(client: Pool | PoolClient, resource: Resource): Promise<void> {
+  async deleteValuesForResource(client: postgres.Sql, resource: Resource): Promise<void> {
     const deletedCodes = await new DeleteQuery('Coding')
       .where('system', '=', resource.id)
       .returnColumn('id')

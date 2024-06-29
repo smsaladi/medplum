@@ -1,6 +1,6 @@
 import { Operator as FhirOperator, Filter, SortRule, splitSearchOnComma } from '@medplum/core';
 import { Resource, ResourceType, SearchParameter } from '@medplum/fhirtypes';
-import { Pool, PoolClient } from 'pg';
+import postgres from 'postgres';
 import {
   Column,
   Condition,
@@ -50,7 +50,7 @@ export abstract class LookupTable {
    * @param resource - The resource to index.
    * @param create - True if the resource should be created (vs updated).
    */
-  abstract indexResource(client: PoolClient, resource: Resource, create: boolean): Promise<void>;
+  abstract indexResource(client: postgres.Sql, resource: Resource, create: boolean): Promise<void>;
 
   /**
    * Builds a "where" condition for the select query builder.
@@ -130,7 +130,7 @@ export abstract class LookupTable {
    * @param values - The values to insert.
    */
   protected async insertValuesForResource(
-    client: Pool | PoolClient,
+    client: postgres.Sql,
     resourceType: ResourceType,
     values: Record<string, any>[]
   ): Promise<void> {
@@ -147,7 +147,7 @@ export abstract class LookupTable {
    * @param client - The database client.
    * @param resource - The resource to delete.
    */
-  async deleteValuesForResource(client: Pool | PoolClient, resource: Resource): Promise<void> {
+  async deleteValuesForResource(client: postgres.Sql, resource: Resource): Promise<void> {
     const tableName = this.getTableName(resource.resourceType);
     const resourceId = resource.id as string;
     await new DeleteQuery(tableName).where('resourceId', '=', resourceId).execute(client);

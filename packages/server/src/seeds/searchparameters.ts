@@ -10,7 +10,7 @@ import { r4ProjectId } from '../seed';
  */
 export async function rebuildR4SearchParameters(): Promise<void> {
   const client = getDatabasePool();
-  await client.query('DELETE FROM "SearchParameter" WHERE "projectId" = $1', [r4ProjectId]);
+  await client.unsafe('DELETE FROM "SearchParameter" WHERE "projectId" = $1', [r4ProjectId]);
 
   const systemRepo = getSystemRepo();
 

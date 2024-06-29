@@ -1,15 +1,15 @@
-import { Pool, PoolClient } from 'pg';
+import postgres from 'postgres';
 import { MedplumServerConfig } from './config';
 import { globalLogger } from './logger';
 import * as migrations from './migrations/schema';
 
-let pool: Pool | undefined;
+let psql: postgres.Sql | undefined;
 
-export function getDatabasePool(): Pool {
-  if (!pool) {
+export function getDatabasePool(): postgres.Sql {
+  if (!psql) {
     throw new Error('Database not setup');
   }
-  return pool;
+  return psql;
 }
 
 export const locks = {
@@ -27,6 +27,7 @@ export async function initDatabase(serverConfig: MedplumServerConfig): Promise<v
     password: config.password,
     ssl: config.ssl,
     max: 100,
+    idle_timeout: 120,
   };
 
   if (serverConfig.databaseProxyEndpoint) {
@@ -35,56 +36,56 @@ export async function initDatabase(serverConfig: MedplumServerConfig): Promise<v
     poolConfig.ssl.require = true;
   }
 
-  pool = new Pool(poolConfig);
+  psql = postgres(poolConfig);
 
-  pool.on('error', (err) => {
-    globalLogger.error('Database connection error', err);
-  });
+  // pool.on('error', (err) => {
+  //   globalLogger.error('Database connection error', err);
+  // });
 
-  pool.on('connect', (client) => {
-    client.query(`SET statement_timeout TO ${config.queryTimeout ?? 60000}`).catch((err) => {
-      globalLogger.warn('Failed to set query timeout', err);
-    });
-    client.query(`SET default_transaction_isolation TO 'REPEATABLE READ'`).catch((err) => {
-      globalLogger.warn('Failed to set default transaction isolation', err);
-    });
-  });
+  // pool.on('connect', (client) => {
+  //   client.query(`SET statement_timeout TO ${config.queryTimeout ?? 60000}`).catch((err) => {
+  //     globalLogger.warn('Failed to set query timeout', err);
+  //   });
+  //   client.query(`SET default_transaction_isolation TO 'REPEATABLE READ'`).catch((err) => {
+  //     globalLogger.warn('Failed to set default transaction isolation', err);
+  //   });
+  // });
 
-  let client: PoolClient | undefined;
   // Run migrations by default
   if (config.runMigrations !== false) {
+    let reserved: postgres.ReservedSql | undefined = undefined;
     try {
-      client = await pool.connect();
-      await client.query('SELECT pg_advisory_lock($1)', [locks.migration]);
-      await migrate(client);
+      reserved = await psql.reserve();
+      // await reserved.unsafe('SELECT pg_advisory_lock($1)', [locks.migration]);
+      await migrate(reserved);
     } finally {
-      if (client) {
-        await client.query('SELECT pg_advisory_unlock($1)', [locks.migration]);
-        client.release();
+      if (reserved) {
+        // await psql.unsafe('SELECT pg_advisory_unlock($1)', [locks.migration]);
+        reserved.release();
       }
     }
   }
 }
 
 export async function closeDatabase(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = undefined;
+  if (psql) {
+    await psql.end();
+    psql = undefined;
   }
 }
 
-async function migrate(client: PoolClient): Promise<void> {
-  await client.query(`CREATE TABLE IF NOT EXISTS "DatabaseMigration" (
+async function migrate(psql: postgres.Sql): Promise<void> {
+  await psql.unsafe(`CREATE TABLE IF NOT EXISTS "DatabaseMigration" (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "version" INTEGER NOT NULL,
     "dataVersion" INTEGER NOT NULL
   )`);
 
-  const result = await client.query('SELECT "version" FROM "DatabaseMigration"');
-  const version = result.rows[0]?.version ?? -1;
+  const result = await psql.unsafe<{ version: number }[]>('SELECT "version" FROM "DatabaseMigration"');
+  const version = result?.[0]?.version ?? -1;
 
   if (version < 0) {
-    await client.query('INSERT INTO "DatabaseMigration" ("id", "version", "dataVersion") VALUES (1, 0, 0)');
+    await psql.unsafe('INSERT INTO "DatabaseMigration" ("id", "version", "dataVersion") VALUES (1, 0, 0)');
   }
 
   const migrationKeys = Object.keys(migrations);
@@ -92,9 +93,9 @@ async function migrate(client: PoolClient): Promise<void> {
     const migration = (migrations as Record<string, migrations.Migration>)['v' + i];
     if (migration) {
       const start = Date.now();
-      await migration.run(client);
+      // await migration.run(client);
       globalLogger.info('Database schema migration', { version: `v${i}`, duration: `${Date.now() - start} ms` });
-      await client.query('UPDATE "DatabaseMigration" SET "version"=$1', [i]);
+      await psql.unsafe('UPDATE "DatabaseMigration" SET "version"=$1', [i]);
     }
   }
 }

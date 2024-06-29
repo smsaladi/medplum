@@ -22,7 +22,7 @@ import {
   ResourceType,
   SearchParameter,
 } from '@medplum/fhirtypes';
-import { PoolClient } from 'pg';
+import postgres from 'postgres';
 import { getLogger } from '../../context';
 import { Column, Condition, Conjunction, Disjunction, Exists, Expression, Negation, SelectQuery } from '../sql';
 import { LookupTable } from './lookuptable';
@@ -76,7 +76,7 @@ export class TokenTable extends LookupTable {
    * @param create - True if the resource should be created (vs updated).
    * @returns Promise on completion.
    */
-  async indexResource(client: PoolClient, resource: Resource, create: boolean): Promise<void> {
+  async indexResource(client: postgres.Sql, resource: Resource, create: boolean): Promise<void> {
     if (!create) {
       await this.deleteValuesForResource(client, resource);
     }
