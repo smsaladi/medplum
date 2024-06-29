@@ -348,6 +348,21 @@ export class SqlBuilder {
     return this.values;
   }
 
+  transformValues(values: any[]): any[] {
+    return values.map((val) => {
+      switch (val) {
+        case undefined:
+          return null;
+        case 'true':
+          return true;
+        case 'false':
+          return false;
+        default:
+          return val;
+      }
+    });
+  }
+
   async execute(psql: postgres.Sql): Promise<any[]> {
     const sql = this.toString();
     let startTime = 0;
@@ -357,10 +372,8 @@ export class SqlBuilder {
       startTime = Date.now();
     }
     try {
-      const result = await psql.unsafe(
-        sql,
-        this.values.map((val) => (val === undefined ? null : val))
-      );
+      const values = this.transformValues(this.values);
+      const result = await psql.unsafe(sql, values);
       if (this.debug) {
         const endTime = Date.now();
         const duration = endTime - startTime;

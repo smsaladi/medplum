@@ -1219,8 +1219,6 @@ export class Repository extends BaseRepository implements FhirRepository<postgre
       }
     }
 
-    console.log({ columns });
-
     await new InsertQuery(resourceType, [columns]).mergeOnConflict().execute(client);
   }
 
