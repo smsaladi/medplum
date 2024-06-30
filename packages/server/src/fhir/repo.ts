@@ -648,7 +648,6 @@ export class Repository extends BaseRepository implements FhirRepository<postgre
 
   private async handleStorage(result: Resource, create: boolean): Promise<void> {
     if (!this.isCacheOnly(result)) {
-      console.log(result);
       await this.writeToDatabase(result, create);
     } else if (result.resourceType === 'Subscription' && result.channel?.type === 'websocket') {
       const redis = getRedis();
@@ -1993,7 +1992,9 @@ export class Repository extends BaseRepository implements FhirRepository<postgre
       this.conn.release();
       this.conn = undefined;
     }
-    globalLogger.error(err instanceof Error ? normalizeErrorString(err) : 'Error');
+    if (err) {
+      globalLogger.error(err instanceof Error ? normalizeErrorString(err) : 'Error while releasing connection');
+    }
   }
 
   async withTransaction<TResult>(
